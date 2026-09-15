@@ -1,4 +1,13 @@
 # rims_db_definition
+
+## Notes
+
+- Decisió relació persona/grup recerca. Per exemple, a PROJECT cal tenir el research_group_id, quan ja està disponible a través de main_researcher_id? El mateix passa a ACTIVITY
+
+- PERSON és sempre gent, o poden ser organitzacions?
+
+## Esquema
+
 ```mermaid
 erDiagram
 PERSON{
