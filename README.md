@@ -4,6 +4,10 @@
 
 - Decisió relació persona/grup recerca. Per exemple, a PROJECT cal tenir el research_group_id, quan ja està disponible a través de main_researcher_id? El mateix passa a ACTIVITY
 
+- Outcome es relaciona amb activitat i output, però output ja es relaciona amb activitat. Similar al cas persona/grup recerca.
+
+- Output es relaciona amb activitat i projecte, però activitat ja es relaciona amb projecte.
+
 - PERSON és sempre gent, o poden ser organitzacions?
 
 ## Esquema
