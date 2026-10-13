@@ -149,12 +149,17 @@ ACTIVITY_OUTPUT{
     int output_id
 }
 
+GEOGRAPHICAL_SCALE{
+    int id
+}
+
 OUTCOME{
     int id    
     date date
     int outcome_type
     string description
     string evidence
+    int geographical_scale_id
 }
 
 EVIDENCE{
@@ -183,10 +188,10 @@ RELATED_OUTPUTS_OUTCOME{
 
 IMPACT{
     int id
-    int related_outcome_id
+    int outcome_id
     date date
     int impact_type
-    string geographical_scale
+    int geographical_scale_id
     string description
     int role_played_by_research_team    
     int confidence_level
@@ -222,6 +227,8 @@ EVIDENCE_IMPACT{
 }
 
 STAKEHOLDER_TYPE ||--o{ STAKEHOLDER: "Type of stakeholder"
+GEOGRAPHICAL_SCALE ||--o{ OUTCOME: "Geographical scale of outcome"
+GEOGRAPHICAL_SCALE ||--o{ IMPACT: "Geographical scale of impact"
 RESEARCH_GROUP ||--o{ PERSON : "Belongs to"
 ACTIVITY ||--o{ ACTIVITY_DOCUMENTATION : "Document/media associated with activity"
 MEDIA ||--o{ ACTIVITY_DOCUMENTATION : "The media"
@@ -258,6 +265,7 @@ STAKEHOLDER ||--o{ STAKEHOLDERS_ACTIVITY : "Stakeholder in activity"
 OUTCOME ||--o{ STAKEHOLDERS_OUTCOME : "Outcome stakeholders"
 STAKEHOLDER ||--o{ STAKEHOLDERS_OUTCOME : "Stakeholder in outcome"
 IMPACT ||--o{ STAKEHOLDERS_IMPACT : "Impact stakeholders"
+OUTCOME ||--o{ IMPACT : "Related outcome"
 STAKEHOLDER ||--o{ STAKEHOLDERS_IMPACT : "Stakeholder in impact"
 PERSON ||--o{ CREAF_STAFF_IMPACT : "CREAF staff involved in impact"
 IMPACT ||--o{ CREAF_STAFF_IMPACT : "Impact in which someone from CREAF is involved"
@@ -301,7 +309,7 @@ CREATE TABLE "research_group" (
 CREATE TABLE "project" (
     "id" SERIAL PRIMARY KEY,
     "title" TEXT,
-    "main_researcher_id" INTEGER,
+    "person_id" INTEGER,
     "research_group_id" INTEGER,
     "founding_programme" TEXT,
     "start_date" DATE,
@@ -338,8 +346,8 @@ CREATE TABLE "people_involved_project" (
 
 CREATE TABLE "activity" (
     "id" SERIAL PRIMARY KEY,
-    "related_project_id" INTEGER,
-    "related_person_id" INTEGER,
+    "project_id" INTEGER,
+    "person_id" INTEGER,
     "title" TEXT,
     "date" DATE,
     "description" TEXT,
@@ -366,8 +374,8 @@ CREATE TABLE "creaf_staff_activity" (
 
 CREATE TABLE "output" (
     "id" SERIAL PRIMARY KEY,
-    "related_project_id" INTEGER,
-    "related_person_id" INTEGER,
+    "project_id" INTEGER,
+    "person_id" INTEGER,
     "output_type" INTEGER,
     "title" TEXT,
     "date" DATE,
@@ -402,12 +410,17 @@ CREATE TABLE "activity_output" (
     "output_id" INTEGER
 );
 
+CREATE TABLE "geographical_scale" (
+    "id" SERIAL PRIMARY KEY
+);
+
 CREATE TABLE "outcome" (
     "id" SERIAL PRIMARY KEY,
     "date" DATE,
     "outcome_type" INTEGER,
     "description" TEXT,
-    "evidence" TEXT
+    "evidence" TEXT,
+    "geographical_scale_id" INTEGER
 );
 
 CREATE TABLE "evidence" (
@@ -432,22 +445,22 @@ CREATE TABLE "evidence_outcome" (
 
 CREATE TABLE "related_activities_outcome" (
     "id" SERIAL PRIMARY KEY,
-    "id_outcome" INTEGER,
-    "id_activity" INTEGER
+    "outcome_id" INTEGER,
+    "activity_id" INTEGER
 );
 
 CREATE TABLE "related_outputs_outcome" (
     "id" SERIAL PRIMARY KEY,
-    "id_outcome" INTEGER,
-    "id_output" INTEGER
+    "outcome_id" INTEGER,
+    "output_id" INTEGER
 );
 
 CREATE TABLE "impact" (
     "id" SERIAL PRIMARY KEY,
-    "related_outcome_id" INTEGER,
+    "outcome_id" INTEGER,
     "date" DATE,
     "impact_type" INTEGER,
-    "geographical_scale" TEXT,
+    "geographical_scale_id" INTEGER,
     "description" TEXT,
     "role_played_by_research_team" INTEGER,
     "confidence_level" INTEGER,
@@ -475,6 +488,14 @@ CREATE TABLE "creaf_staff_impact" (
 ALTER TABLE "stakeholder"
     ADD CONSTRAINT "fk_stakeholder_stakeholder_type_id"
     FOREIGN KEY ("stakeholder_type_id") REFERENCES "stakeholder_type"("id");
+
+ALTER TABLE "outcome"
+    ADD CONSTRAINT "fk_outcome_geographical_scale_id"
+    FOREIGN KEY ("geographical_scale_id") REFERENCES "geographical_scale"("id");
+
+ALTER TABLE "impact"
+    ADD CONSTRAINT "fk_impact_geographical_scale_id"
+    FOREIGN KEY ("geographical_scale_id") REFERENCES "geographical_scale"("id");
 
 ALTER TABLE "person"
     ADD CONSTRAINT "fk_person_research_group_id"
@@ -568,29 +589,29 @@ ALTER TABLE "creaf_staff_activity"
     ADD CONSTRAINT "fk_creaf_staff_activity_activity_id"
     FOREIGN KEY ("activity_id") REFERENCES "activity"("id");
 
-ALTER TABLE "project"
-    ADD CONSTRAINT "fk_project_output_id"
-    FOREIGN KEY ("output_id") REFERENCES "output"("id");
-
-ALTER TABLE "person"
-    ADD CONSTRAINT "fk_person_output_id"
-    FOREIGN KEY ("output_id") REFERENCES "output"("id");
-
-ALTER TABLE "outcome"
-    ADD CONSTRAINT "fk_outcome_related_activities_outcome_id"
-    FOREIGN KEY ("related_activities_outcome_id") REFERENCES "related_activities_outcome"("id");
-
-ALTER TABLE "activity"
-    ADD CONSTRAINT "fk_activity_related_activities_outcome_id"
-    FOREIGN KEY ("related_activities_outcome_id") REFERENCES "related_activities_outcome"("id");
-
-ALTER TABLE "outcome"
-    ADD CONSTRAINT "fk_outcome_related_outputs_outcome_id"
-    FOREIGN KEY ("related_outputs_outcome_id") REFERENCES "related_outputs_outcome"("id");
+ALTER TABLE "output"
+    ADD CONSTRAINT "fk_output_project_id"
+    FOREIGN KEY ("project_id") REFERENCES "project"("id");
 
 ALTER TABLE "output"
-    ADD CONSTRAINT "fk_output_related_outputs_outcome_id"
-    FOREIGN KEY ("related_outputs_outcome_id") REFERENCES "related_outputs_outcome"("id");
+    ADD CONSTRAINT "fk_output_person_id"
+    FOREIGN KEY ("person_id") REFERENCES "person"("id");
+
+ALTER TABLE "related_activities_outcome"
+    ADD CONSTRAINT "fk_related_activities_outcome_outcome_id"
+    FOREIGN KEY ("outcome_id") REFERENCES "outcome"("id");
+
+ALTER TABLE "related_activities_outcome"
+    ADD CONSTRAINT "fk_related_activities_outcome_activity_id"
+    FOREIGN KEY ("activity_id") REFERENCES "activity"("id");
+
+ALTER TABLE "related_outputs_outcome"
+    ADD CONSTRAINT "fk_related_outputs_outcome_outcome_id"
+    FOREIGN KEY ("outcome_id") REFERENCES "outcome"("id");
+
+ALTER TABLE "related_outputs_outcome"
+    ADD CONSTRAINT "fk_related_outputs_outcome_output_id"
+    FOREIGN KEY ("output_id") REFERENCES "output"("id");
 
 ALTER TABLE "evidence_outcome"
     ADD CONSTRAINT "fk_evidence_outcome_outcome_id"
@@ -616,9 +637,13 @@ ALTER TABLE "stakeholders_outcome"
     ADD CONSTRAINT "fk_stakeholders_outcome_stakeholder_id"
     FOREIGN KEY ("stakeholder_id") REFERENCES "stakeholder"("id");
 
-ALTER TABLE "outcome"
-    ADD CONSTRAINT "fk_outcome_stakeholders_impact_id"
-    FOREIGN KEY ("stakeholders_impact_id") REFERENCES "stakeholders_impact"("id");
+ALTER TABLE "stakeholders_impact"
+    ADD CONSTRAINT "fk_stakeholders_impact_impact_id"
+    FOREIGN KEY ("impact_id") REFERENCES "impact"("id");
+
+ALTER TABLE "impact"
+    ADD CONSTRAINT "fk_impact_outcome_id"
+    FOREIGN KEY ("outcome_id") REFERENCES "outcome"("id");
 
 ALTER TABLE "stakeholders_impact"
     ADD CONSTRAINT "fk_stakeholders_impact_stakeholder_id"
